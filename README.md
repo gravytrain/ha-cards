@@ -1,22 +1,31 @@
-# Double E Reserve — HA Custom Cards
+# Double E Reserve Card
 
-Custom Home Assistant cards for the Double E Reserve property management dashboard.
+Custom Home Assistant card for the Double E Reserve property management dashboard.
 
-## Structure
+## Installation
 
+1. Add this repository as a custom repository in HACS (category: Lovelace)
+2. Install "Double E Reserve Card"
+3. Add to your dashboard:
+
+```yaml
+type: custom:double-e-card
+daystrom_url: http://192.168.1.218:8090
 ```
-www/
-  double-e-card.js      # Main property overview card
-  irrigation-card.js    # Irrigation zone management (future)
-  pasture-card.js       # Rotational grazing tracker (future)
-```
 
-## Deployment
+## Features
 
-This repo is synced to Home Assistant's `/config/www/` directory via the **Git Pull** addon.
-Cards are served at `/local/<filename>.js` and registered as dashboard resources.
+- Dark-themed property overview with SVG circular gauges
+- Real-time HA entity state via hass object
+- Sections: Garden (raised beds), Irrigation, Pasture, Livestock
+- Modular — show/hide sections via config
 
-## Development
+## Configuration
 
-Edit cards locally, push to GitHub, then trigger a pull in HA (or wait for the scheduled sync).
-Hard-refresh the browser to pick up changes (or bump the `?v=` query param on the resource URL).
+| Key | Default | Description |
+|-----|---------|-------------|
+| `daystrom_url` | `http://192.168.1.218:8090` | Daystrom API endpoint |
+| `show_garden` | `true` | Show garden section |
+| `show_irrigation` | `true` | Show irrigation section |
+| `show_pasture` | `true` | Show pasture section |
+| `show_livestock` | `true` | Show livestock section |
