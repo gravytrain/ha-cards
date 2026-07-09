@@ -40,7 +40,8 @@ class DoubleECard extends HTMLElement {
     try {
       const res = await fetch(`${this._config.daystrom_url}/api/plants?status=active`);
       const { data: plants } = await res.json();
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const results = await Promise.all(
         plants.map(p =>
           fetch(`${this._config.daystrom_url}/api/plants/${p.id}/events`, {
