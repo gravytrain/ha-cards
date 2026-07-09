@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.1.0';
+const CARD_VERSION = '0.2.0';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -29,6 +29,48 @@ class DoubleECard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     this._render();
+  }
+
+  async _logEventForAllPlants(eventType, note = '') {
+    const btn = this.shadowRoot.querySelector(`[data-action="${eventType}"]`);
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Logging...';
+    }
+    try {
+      const res = await fetch(`${this._config.daystrom_url}/api/plants?status=active`);
+      const { data: plants } = await res.json();
+      const today = new Date().toISOString().split('T')[0];
+      const results = await Promise.all(
+        plants.map(p =>
+          fetch(`${this._config.daystrom_url}/api/plants/${p.id}/events`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: eventType, date: today, note }),
+          })
+        )
+      );
+      const succeeded = results.filter(r => r.ok).length;
+      if (btn) {
+        btn.textContent = `Done! (${succeeded}/${plants.length})`;
+        btn.classList.add('btn-success');
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = eventType === 'watered' ? '💧 Watered All' : '🌿 Fertilized All';
+          btn.classList.remove('btn-success');
+        }, 3000);
+      }
+    } catch (err) {
+      if (btn) {
+        btn.textContent = 'Error!';
+        btn.classList.add('btn-error');
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = eventType === 'watered' ? '💧 Watered All' : '🌿 Fertilized All';
+          btn.classList.remove('btn-error');
+        }, 3000);
+      }
+    }
   }
 
   _getState(entityId) {
@@ -103,6 +145,10 @@ class DoubleECard extends HTMLElement {
         <div class="section">
           <div class="section-header">
             <h2>🌱 Garden — Raised Beds</h2>
+            <div class="action-buttons">
+              <button class="btn btn-water" data-action="watered">💧 Watered All</button>
+              <button class="btn btn-fert" data-action="fertilized">🌿 Fertilized All</button>
+            </div>
           </div>
           <div class="zone-grid">
             ${beds.map(bed => this._renderBedGauge(bed)).join('')}
@@ -160,6 +206,11 @@ class DoubleECard extends HTMLElement {
         ` : ''}
       </div>
     `;
+
+    const waterBtn = this.shadowRoot.querySelector('[data-action="watered"]');
+    const fertBtn = this.shadowRoot.querySelector('[data-action="fertilized"]');
+    if (waterBtn) waterBtn.addEventListener('click', () => this._logEventForAllPlants('watered'));
+    if (fertBtn) fertBtn.addEventListener('click', () => this._logEventForAllPlants('fertilized'));
   }
 
   _renderBedGauge(bed) {
@@ -340,6 +391,44 @@ class DoubleECard extends HTMLElement {
         background: #2a2a3e;
         color: #888;
         border: 1px dashed #555;
+      }
+
+      /* Action Buttons */
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .btn {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #fff;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+      .btn-water {
+        background: #2980b9;
+      }
+      .btn-water:hover:not(:disabled) {
+        background: #3498db;
+      }
+      .btn-fert {
+        background: #27ae60;
+      }
+      .btn-fert:hover:not(:disabled) {
+        background: #2ecc71;
+      }
+      .btn-success {
+        background: #1D9E75 !important;
+      }
+      .btn-error {
+        background: #e74c3c !important;
       }
 
       /* Zone Grid (Circular Gauges) */
