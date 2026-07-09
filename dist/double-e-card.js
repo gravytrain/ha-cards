@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.3.1';
+const CARD_VERSION = '0.4.0';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -82,7 +82,7 @@ class DoubleECard extends HTMLElement {
             if (attrs.vaccinations_current) healthBadges.push('<span class="animal-badge badge-good">Vacc ✓</span>');
             if (attrs.spayed_neutered) healthBadges.push('<span class="animal-badge badge-good">Fixed ✓</span>');
             if (attrs.microchipped) healthBadges.push('<span class="animal-badge badge-good">Chipped ✓</span>');
-            return `<div class="animal-card">
+            return `<div class="animal-card" data-id="${a.id}">
               <span class="animal-icon">${icon}</span>
               <div class="animal-info">
                 <div class="animal-name">${a.name}</div>
@@ -102,6 +102,148 @@ class DoubleECard extends HTMLElement {
     const container = this.shadowRoot?.querySelector('.animals-content');
     if (!container) return;
     container.innerHTML = this._renderAnimalsHTML();
+    this._bindAnimalClicks();
+  }
+
+  _bindAnimalClicks() {
+    const cards = this.shadowRoot.querySelectorAll('.animal-card[data-id]');
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        const animal = (this._animals || []).find(a => a.id === card.dataset.id);
+        if (animal) this._openAnimalEditor(animal);
+      });
+    });
+    const addBtn = this.shadowRoot.querySelector('.btn-add-animal');
+    if (addBtn) addBtn.addEventListener('click', () => this._openAnimalEditor(null));
+  }
+
+  _openAnimalEditor(animal) {
+    const isNew = !animal;
+    const attrs = animal?.attributes || {};
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML = `
+      <div class="overlay-panel">
+        <div class="overlay-header">
+          <h3>${isNew ? 'Add Animal' : `Edit: ${animal.name}`}</h3>
+          <button class="overlay-close">✕</button>
+        </div>
+        <div class="overlay-body">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" id="ae-name" value="${animal?.name || ''}">
+
+          <label class="form-label">Species</label>
+          <select class="form-input" id="ae-species">
+            ${['dog','cat','cattle','chicken','horse','goat','pig','other'].map(s =>
+              `<option value="${s}" ${attrs.species === s ? 'selected' : ''}>${s}</option>`
+            ).join('')}
+          </select>
+
+          <label class="form-label">Category</label>
+          <select class="form-input" id="ae-category">
+            ${['pet','farm_animal','livestock'].map(c =>
+              `<option value="${c}" ${attrs.category === c ? 'selected' : ''}>${c.replace('_',' ')}</option>`
+            ).join('')}
+          </select>
+
+          <label class="form-label">Breed</label>
+          <input type="text" class="form-input" id="ae-breed" value="${attrs.breed || ''}">
+
+          <label class="form-label">Color</label>
+          <input type="text" class="form-input" id="ae-color" value="${attrs.color || ''}">
+
+          <label class="form-label">Sex</label>
+          <select class="form-input" id="ae-sex">
+            <option value="" ${!attrs.sex ? 'selected' : ''}>—</option>
+            <option value="male" ${attrs.sex === 'male' ? 'selected' : ''}>Male</option>
+            <option value="female" ${attrs.sex === 'female' ? 'selected' : ''}>Female</option>
+          </select>
+
+          <label class="form-label">Date of Birth</label>
+          <input type="date" class="form-input" id="ae-dob" value="${attrs.date_of_birth || ''}">
+
+          <label class="form-label">Weight (lbs)</label>
+          <input type="number" class="form-input" id="ae-weight" value="${attrs.weight_lbs || ''}">
+
+          <label class="form-label">Diet / Feed Notes</label>
+          <input type="text" class="form-input" id="ae-diet" value="${attrs.diet || ''}">
+
+          <label class="form-label">Health Notes</label>
+          <textarea class="form-input form-textarea" id="ae-health">${attrs.health_notes || ''}</textarea>
+
+          <div class="form-checks">
+            <label><input type="checkbox" id="ae-vacc" ${attrs.vaccinations_current ? 'checked' : ''}> Vaccinations current</label>
+            <label><input type="checkbox" id="ae-fixed" ${attrs.spayed_neutered ? 'checked' : ''}> Spayed / Neutered</label>
+            <label><input type="checkbox" id="ae-chip" ${attrs.microchipped ? 'checked' : ''}> Microchipped</label>
+          </div>
+
+          <label class="form-label">Vet Name</label>
+          <input type="text" class="form-input" id="ae-vet" value="${attrs.vet_name || ''}">
+
+          <label class="form-label">Vet Phone</label>
+          <input type="text" class="form-input" id="ae-vetphone" value="${attrs.vet_phone || ''}">
+        </div>
+        <div class="overlay-footer">
+          ${!isNew ? '<button class="btn btn-delete" id="ae-delete">🗑 Delete</button>' : '<span></span>'}
+          <div class="action-buttons">
+            <button class="btn btn-cancel" id="ae-cancel">Cancel</button>
+            <button class="btn btn-save" id="ae-save">${isNew ? 'Add' : 'Save'}</button>
+          </div>
+        </div>
+      </div>
+    `;
+    this.shadowRoot.appendChild(overlay);
+
+    overlay.querySelector('.overlay-close').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#ae-cancel').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('#ae-save').addEventListener('click', async () => {
+      const payload = {
+        name: overlay.querySelector('#ae-name').value.trim(),
+        type: 'animal',
+        status: 'active',
+        attributes: {
+          species: overlay.querySelector('#ae-species').value,
+          category: overlay.querySelector('#ae-category').value,
+          breed: overlay.querySelector('#ae-breed').value || null,
+          color: overlay.querySelector('#ae-color').value || null,
+          sex: overlay.querySelector('#ae-sex').value || null,
+          date_of_birth: overlay.querySelector('#ae-dob').value || null,
+          weight_lbs: overlay.querySelector('#ae-weight').value ? Number(overlay.querySelector('#ae-weight').value) : null,
+          diet: overlay.querySelector('#ae-diet').value || null,
+          health_notes: overlay.querySelector('#ae-health').value || null,
+          vaccinations_current: overlay.querySelector('#ae-vacc').checked,
+          spayed_neutered: overlay.querySelector('#ae-fixed').checked,
+          microchipped: overlay.querySelector('#ae-chip').checked,
+          vet_name: overlay.querySelector('#ae-vet').value || null,
+          vet_phone: overlay.querySelector('#ae-vetphone').value || null,
+        },
+      };
+      if (!payload.name) return;
+      try {
+        const url = isNew
+          ? `${this._config.daystrom_url}/api/assets`
+          : `${this._config.daystrom_url}/api/assets/${animal.id}`;
+        const method = isNew ? 'POST' : 'PATCH';
+        await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        overlay.remove();
+        await this._loadAnimals();
+      } catch (err) {
+        overlay.querySelector('#ae-save').textContent = 'Error!';
+      }
+    });
+
+    if (!isNew) {
+      overlay.querySelector('#ae-delete').addEventListener('click', async () => {
+        if (!confirm(`Delete ${animal.name}?`)) return;
+        try {
+          await fetch(`${this._config.daystrom_url}/api/assets/${animal.id}`, { method: 'DELETE' });
+          overlay.remove();
+          await this._loadAnimals();
+        } catch (err) {}
+      });
+    }
   }
 
   async _logEventForAllPlants(eventType, note = '') {
@@ -270,7 +412,10 @@ class DoubleECard extends HTMLElement {
         <div class="section">
           <div class="section-header">
             <h2>🐾 Animals</h2>
-            <span class="badge badge-on">${(this._animals || []).length}</span>
+            <div class="action-buttons">
+              <button class="btn btn-add-animal">+ Add Animal</button>
+              <span class="badge badge-on">${(this._animals || []).length}</span>
+            </div>
           </div>
           <div class="animals-content">
             ${this._animals ? this._renderAnimalsHTML() : '<div class="placeholder"><p>Loading...</p></div>'}
@@ -284,6 +429,7 @@ class DoubleECard extends HTMLElement {
     const fertBtn = this.shadowRoot.querySelector('[data-action="fertilized"]');
     if (waterBtn) waterBtn.addEventListener('click', () => this._logEventForAllPlants('watered'));
     if (fertBtn) fertBtn.addEventListener('click', () => this._logEventForAllPlants('fertilized'));
+    this._bindAnimalClicks();
   }
 
   _renderBedGauge(bed) {
@@ -533,6 +679,11 @@ class DoubleECard extends HTMLElement {
         padding: 12px 14px;
         min-width: 180px;
         flex: 1;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .animal-card:hover {
+        background: #222240;
       }
       .animal-icon {
         font-size: 24px;
@@ -641,6 +792,120 @@ class DoubleECard extends HTMLElement {
         font-style: italic;
         margin-top: 8px;
       }
+
+      /* Overlay / Editor */
+      .overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      .overlay-panel {
+        background: #1a1a2e;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 420px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #2a2a3e;
+      }
+      .overlay-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #2a2a3e;
+      }
+      .overlay-header h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #fff;
+      }
+      .overlay-close {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .overlay-close:hover { color: #fff; }
+      .overlay-body {
+        padding: 16px 20px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .overlay-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        border-top: 1px solid #2a2a3e;
+      }
+      .form-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #888;
+        margin: 12px 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .form-label:first-child { margin-top: 0; }
+      .form-input {
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        background: #16213e;
+        border: 1px solid #2a2a3e;
+        border-radius: 6px;
+        color: #e0e0e0;
+        font-size: 13px;
+        box-sizing: border-box;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: #1D9E75;
+      }
+      .form-textarea {
+        min-height: 60px;
+        resize: vertical;
+      }
+      .form-checks {
+        margin: 12px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-checks label {
+        font-size: 13px;
+        color: #ccc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .btn-add-animal {
+        background: #2a2a3e;
+        color: #aaa;
+        font-size: 11px;
+      }
+      .btn-add-animal:hover { background: #333; color: #fff; }
+      .btn-save {
+        background: #1D9E75;
+      }
+      .btn-save:hover { background: #24b888; }
+      .btn-cancel {
+        background: #555;
+      }
+      .btn-cancel:hover { background: #666; }
+      .btn-delete {
+        background: #e74c3c;
+      }
+      .btn-delete:hover { background: #c0392b; }
 
       /* Placeholder */
       .placeholder {
