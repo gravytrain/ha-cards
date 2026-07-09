@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.3.0';
+const CARD_VERSION = '0.3.1';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -53,14 +53,10 @@ class DoubleECard extends HTMLElement {
     this._renderAnimalsSection();
   }
 
-  _renderAnimalsSection() {
-    const container = this.shadowRoot?.querySelector('.animals-content');
-    if (!container) return;
-
+  _renderAnimalsHTML() {
     const animals = this._animals || [];
     if (animals.length === 0) {
-      container.innerHTML = `<div class="placeholder"><p>No animals found</p><p class="placeholder-sub">Add animals to Daystrom to activate</p></div>`;
-      return;
+      return `<div class="placeholder"><p>No animals found</p><p class="placeholder-sub">Add animals to Daystrom to activate</p></div>`;
     }
 
     const grouped = {};
@@ -99,7 +95,13 @@ class DoubleECard extends HTMLElement {
         </div>
       </div>`;
     }
-    container.innerHTML = html;
+    return html;
+  }
+
+  _renderAnimalsSection() {
+    const container = this.shadowRoot?.querySelector('.animals-content');
+    if (!container) return;
+    container.innerHTML = this._renderAnimalsHTML();
   }
 
   async _logEventForAllPlants(eventType, note = '') {
@@ -271,7 +273,7 @@ class DoubleECard extends HTMLElement {
             <span class="badge badge-on">${(this._animals || []).length}</span>
           </div>
           <div class="animals-content">
-            <div class="placeholder"><p>Loading...</p></div>
+            ${this._animals ? this._renderAnimalsHTML() : '<div class="placeholder"><p>Loading...</p></div>'}
           </div>
         </div>
         ` : ''}
