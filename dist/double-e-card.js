@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.2.1';
+const CARD_VERSION = '0.3.0';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -29,6 +29,77 @@ class DoubleECard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     this._render();
+    if (!this._animalsLoaded) {
+      this._loadAnimals();
+      this._animalsLoaded = true;
+      setInterval(() => this._loadAnimals(), 300000);
+    }
+  }
+
+  async _loadAnimals() {
+    if (this._animalsLoading) return;
+    this._animalsLoading = true;
+    try {
+      const res = await fetch(`${this._config.daystrom_url}/api/assets?type=animal&status=active`);
+      const { data } = await res.json();
+      this._animals = (data || []).map(a => ({
+        ...a,
+        attributes: typeof a.attributes === 'string' ? JSON.parse(a.attributes) : a.attributes || {},
+      }));
+    } catch (err) {
+      this._animals = [];
+    }
+    this._animalsLoading = false;
+    this._renderAnimalsSection();
+  }
+
+  _renderAnimalsSection() {
+    const container = this.shadowRoot?.querySelector('.animals-content');
+    if (!container) return;
+
+    const animals = this._animals || [];
+    if (animals.length === 0) {
+      container.innerHTML = `<div class="placeholder"><p>No animals found</p><p class="placeholder-sub">Add animals to Daystrom to activate</p></div>`;
+      return;
+    }
+
+    const grouped = {};
+    for (const a of animals) {
+      const cat = a.attributes.category || 'other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(a);
+    }
+
+    const categoryLabels = { pet: '🐾 Pets', livestock: '🐄 Livestock', farm_animal: '🐈 Farm Animals', other: '📋 Other' };
+    const speciesIcons = { dog: '🐕', cat: '🐈', cattle: '🐄', chicken: '🐔', horse: '🐴', goat: '🐐', pig: '🐖' };
+
+    let html = '';
+    for (const [cat, list] of Object.entries(grouped)) {
+      html += `<div class="animal-group">
+        <div class="animal-group-label">${categoryLabels[cat] || cat}</div>
+        <div class="animal-list">
+          ${list.map(a => {
+            const attrs = a.attributes;
+            const icon = speciesIcons[attrs.species] || '🐾';
+            const details = [attrs.breed, attrs.color, attrs.sex].filter(Boolean).join(' · ');
+            const healthBadges = [];
+            if (attrs.vaccinations_current) healthBadges.push('<span class="animal-badge badge-good">Vacc ✓</span>');
+            if (attrs.spayed_neutered) healthBadges.push('<span class="animal-badge badge-good">Fixed ✓</span>');
+            if (attrs.microchipped) healthBadges.push('<span class="animal-badge badge-good">Chipped ✓</span>');
+            return `<div class="animal-card">
+              <span class="animal-icon">${icon}</span>
+              <div class="animal-info">
+                <div class="animal-name">${a.name}</div>
+                <div class="animal-details">${details || attrs.species || 'Unknown'}</div>
+                ${healthBadges.length ? `<div class="animal-badges">${healthBadges.join('')}</div>` : ''}
+              </div>
+              ${attrs.weight_lbs ? `<div class="animal-weight">${attrs.weight_lbs} lbs</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+    container.innerHTML = html;
   }
 
   async _logEventForAllPlants(eventType, note = '') {
@@ -192,16 +263,15 @@ class DoubleECard extends HTMLElement {
         </div>
         ` : ''}
 
-        <!-- Livestock Section -->
+        <!-- Animals Section -->
         ${this._config.show_livestock ? `
         <div class="section">
           <div class="section-header">
-            <h2>🐄 Livestock</h2>
-            <span class="badge badge-pending">PENDING</span>
+            <h2>🐾 Animals</h2>
+            <span class="badge badge-on">${(this._animals || []).length}</span>
           </div>
-          <div class="placeholder">
-            <p>Cattle · Chickens · Herd management</p>
-            <p class="placeholder-sub">Add livestock assets to Daystrom to activate</p>
+          <div class="animals-content">
+            <div class="placeholder"><p>Loading...</p></div>
           </div>
         </div>
         ` : ''}
@@ -430,6 +500,76 @@ class DoubleECard extends HTMLElement {
       }
       .btn-error {
         background: #e74c3c !important;
+      }
+
+      /* Animals */
+      .animal-group {
+        margin-bottom: 12px;
+      }
+      .animal-group:last-child {
+        margin-bottom: 0;
+      }
+      .animal-group-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+      .animal-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .animal-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #1a1a2e;
+        border-radius: 10px;
+        padding: 12px 14px;
+        min-width: 180px;
+        flex: 1;
+      }
+      .animal-icon {
+        font-size: 24px;
+      }
+      .animal-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .animal-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .animal-details {
+        font-size: 11px;
+        color: #888;
+        margin-top: 2px;
+      }
+      .animal-badges {
+        display: flex;
+        gap: 4px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .animal-badge {
+        font-size: 9px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+      .badge-good {
+        background: rgba(29, 158, 117, 0.2);
+        color: #1D9E75;
+      }
+      .animal-weight {
+        font-size: 12px;
+        font-weight: 600;
+        color: #aaa;
+        white-space: nowrap;
       }
 
       /* Zone Grid (Circular Gauges) */
