@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.4.1';
+const CARD_VERSION = '0.4.2';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -105,13 +105,16 @@ class DoubleECard extends HTMLElement {
           ${list.map(a => {
             const attrs = a.attributes;
             const icon = speciesIcons[attrs.species] || '🐾';
+            const avatar = attrs.photo_url
+              ? `<img class="animal-avatar" src="${attrs.photo_url}" alt="${a.name}">`
+              : `<span class="animal-icon">${icon}</span>`;
             const details = [attrs.breed, attrs.color, attrs.sex].filter(Boolean).join(' · ');
             const healthBadges = [];
             if (attrs.vaccinations_current) healthBadges.push('<span class="animal-badge badge-good">Vacc ✓</span>');
             if (attrs.spayed_neutered) healthBadges.push('<span class="animal-badge badge-good">Fixed ✓</span>');
             if (attrs.microchipped) healthBadges.push('<span class="animal-badge badge-good">Chipped ✓</span>');
             return `<div class="animal-card" data-id="${a.id}">
-              <span class="animal-icon">${icon}</span>
+              ${avatar}
               <div class="animal-info">
                 <div class="animal-name">${a.name}</div>
                 <div class="animal-details">${details || attrs.species || 'Unknown'}</div>
@@ -174,6 +177,9 @@ class DoubleECard extends HTMLElement {
             ).join('')}
           </select>
 
+          <label class="form-label">Photo URL</label>
+          <input type="url" class="form-input" id="ae-photo" value="${attrs.photo_url || ''}" placeholder="https://...">
+
           <label class="form-label">Breed</label>
           <input type="text" class="form-input" id="ae-breed" value="${attrs.breed || ''}">
 
@@ -234,6 +240,7 @@ class DoubleECard extends HTMLElement {
         attributes: {
           species: overlay.querySelector('#ae-species').value,
           category: overlay.querySelector('#ae-category').value,
+          photo_url: overlay.querySelector('#ae-photo').value || null,
           breed: overlay.querySelector('#ae-breed').value || null,
           color: overlay.querySelector('#ae-color').value || null,
           sex: overlay.querySelector('#ae-sex').value || null,
@@ -713,8 +720,22 @@ class DoubleECard extends HTMLElement {
       .animal-card:hover {
         background: #222240;
       }
+      .animal-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #2a2a3e;
+        flex-shrink: 0;
+      }
       .animal-icon {
         font-size: 24px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
       }
       .animal-info {
         flex: 1;
