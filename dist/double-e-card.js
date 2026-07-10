@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.4.0';
+const CARD_VERSION = '0.4.1';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -27,13 +27,41 @@ class DoubleECard extends HTMLElement {
   }
 
   set hass(hass) {
+    const oldHass = this._hass;
     this._hass = hass;
-    this._render();
+
     if (!this._animalsLoaded) {
-      this._loadAnimals();
       this._animalsLoaded = true;
+      this._loadAnimals();
       setInterval(() => this._loadAnimals(), 300000);
     }
+
+    if (!oldHass) {
+      this._render();
+      return;
+    }
+
+    const watched = [
+      'weather.home',
+      'sensor.agribuddy_temperature',
+      'sensor.agribuddy_humidity',
+      'sensor.agribuddy_wind_speed',
+      'sensor.agribuddy_precipitation',
+      'input_boolean.irrigation_auto_schedule_enabled',
+      'input_boolean.irrigation_rain_delay',
+      'binary_sensor.agribuddy_raised_bed_1_all_thirsty',
+      'binary_sensor.garden_agribuddy_raised_bed_2_all_thirsty',
+      'binary_sensor.garden_agribuddy_raised_bed_3_all_thirsty',
+      'binary_sensor.garden_agribuddy_raised_bed_4_all_thirsty',
+      'binary_sensor.garden_agribuddy_raised_bed_5_all_thirsty',
+      'binary_sensor.garden_agribuddy_raised_bed_6_all_thirsty',
+    ];
+
+    const changed = watched.some(id =>
+      oldHass.states[id] !== hass.states[id]
+    );
+
+    if (changed) this._render();
   }
 
   async _loadAnimals() {
