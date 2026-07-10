@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.4.2';
+const CARD_VERSION = '0.5.0';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -151,86 +151,156 @@ class DoubleECard extends HTMLElement {
   _openAnimalEditor(animal) {
     const isNew = !animal;
     const attrs = animal?.attributes || {};
+    const speciesIcons = { dog: '🐕', cat: '🐈', cattle: '🐄', chicken: '🐔', horse: '🐴', goat: '🐐', pig: '🐖' };
+    const categoryLabels = { pet: 'Pet', farm_animal: 'Farm Animal', livestock: 'Livestock' };
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
+
+    const photoLarge = attrs.photo_url
+      ? `<img class="detail-photo" src="${attrs.photo_url}" alt="${animal?.name || ''}">`
+      : `<div class="detail-photo-placeholder">${speciesIcons[attrs.species] || '🐾'}</div>`;
+
+    const detailRows = [
+      ['Species', attrs.species || '—'],
+      ['Category', categoryLabels[attrs.category] || attrs.category || '—'],
+      ['Breed', attrs.breed || '—'],
+      ['Color', attrs.color || '—'],
+      ['Sex', attrs.sex ? attrs.sex.charAt(0).toUpperCase() + attrs.sex.slice(1) : '—'],
+      ['Date of Birth', attrs.date_of_birth || '—'],
+      ['Weight', attrs.weight_lbs ? `${attrs.weight_lbs} lbs` : '—'],
+      ['Diet', attrs.diet || '—'],
+      ['Health Notes', attrs.health_notes || '—'],
+      ['Vaccinations', attrs.vaccinations_current ? '✓ Current' : '✗ Not current'],
+      ['Spayed/Neutered', attrs.spayed_neutered ? '✓ Yes' : '✗ No'],
+      ['Microchipped', attrs.microchipped ? '✓ Yes' : '✗ No'],
+      ['Vet', attrs.vet_name || '—'],
+      ['Vet Phone', attrs.vet_phone || '—'],
+    ];
+
     overlay.innerHTML = `
       <div class="overlay-panel">
         <div class="overlay-header">
-          <h3>${isNew ? 'Add Animal' : `Edit: ${animal.name}`}</h3>
+          <h3>${isNew ? 'Add Animal' : animal.name}</h3>
           <button class="overlay-close">✕</button>
         </div>
         <div class="overlay-body">
-          <label class="form-label">Name</label>
-          <input type="text" class="form-input" id="ae-name" value="${animal?.name || ''}">
-
-          <label class="form-label">Species</label>
-          <select class="form-input" id="ae-species">
-            ${['dog','cat','cattle','chicken','horse','goat','pig','other'].map(s =>
-              `<option value="${s}" ${attrs.species === s ? 'selected' : ''}>${s}</option>`
-            ).join('')}
-          </select>
-
-          <label class="form-label">Category</label>
-          <select class="form-input" id="ae-category">
-            ${['pet','farm_animal','livestock'].map(c =>
-              `<option value="${c}" ${attrs.category === c ? 'selected' : ''}>${c.replace('_',' ')}</option>`
-            ).join('')}
-          </select>
-
-          <label class="form-label">Photo URL</label>
-          <input type="url" class="form-input" id="ae-photo" value="${attrs.photo_url || ''}" placeholder="https://...">
-
-          <label class="form-label">Breed</label>
-          <input type="text" class="form-input" id="ae-breed" value="${attrs.breed || ''}">
-
-          <label class="form-label">Color</label>
-          <input type="text" class="form-input" id="ae-color" value="${attrs.color || ''}">
-
-          <label class="form-label">Sex</label>
-          <select class="form-input" id="ae-sex">
-            <option value="" ${!attrs.sex ? 'selected' : ''}>—</option>
-            <option value="male" ${attrs.sex === 'male' ? 'selected' : ''}>Male</option>
-            <option value="female" ${attrs.sex === 'female' ? 'selected' : ''}>Female</option>
-          </select>
-
-          <label class="form-label">Date of Birth</label>
-          <input type="date" class="form-input" id="ae-dob" value="${attrs.date_of_birth || ''}">
-
-          <label class="form-label">Weight (lbs)</label>
-          <input type="number" class="form-input" id="ae-weight" value="${attrs.weight_lbs || ''}">
-
-          <label class="form-label">Diet / Feed Notes</label>
-          <input type="text" class="form-input" id="ae-diet" value="${attrs.diet || ''}">
-
-          <label class="form-label">Health Notes</label>
-          <textarea class="form-input form-textarea" id="ae-health">${attrs.health_notes || ''}</textarea>
-
-          <div class="form-checks">
-            <label><input type="checkbox" id="ae-vacc" ${attrs.vaccinations_current ? 'checked' : ''}> Vaccinations current</label>
-            <label><input type="checkbox" id="ae-fixed" ${attrs.spayed_neutered ? 'checked' : ''}> Spayed / Neutered</label>
-            <label><input type="checkbox" id="ae-chip" ${attrs.microchipped ? 'checked' : ''}> Microchipped</label>
+          <!-- Detail View (read-only) -->
+          <div class="detail-view" ${isNew ? 'style="display:none"' : ''}>
+            <div class="detail-photo-wrap">${photoLarge}</div>
+            <div class="detail-fields">
+              ${detailRows.map(([label, val]) => `
+                <div class="detail-row">
+                  <span class="detail-label">${label}</span>
+                  <span class="detail-value">${val}</span>
+                </div>
+              `).join('')}
+            </div>
           </div>
+          <!-- Edit Form (hidden until Edit clicked) -->
+          <div class="edit-view" ${isNew ? '' : 'style="display:none"'}>
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" id="ae-name" value="${animal?.name || ''}">
 
-          <label class="form-label">Vet Name</label>
-          <input type="text" class="form-input" id="ae-vet" value="${attrs.vet_name || ''}">
+            <label class="form-label">Species</label>
+            <select class="form-input" id="ae-species">
+              ${['dog','cat','cattle','chicken','horse','goat','pig','other'].map(s =>
+                `<option value="${s}" ${attrs.species === s ? 'selected' : ''}>${s}</option>`
+              ).join('')}
+            </select>
 
-          <label class="form-label">Vet Phone</label>
-          <input type="text" class="form-input" id="ae-vetphone" value="${attrs.vet_phone || ''}">
+            <label class="form-label">Category</label>
+            <select class="form-input" id="ae-category">
+              ${['pet','farm_animal','livestock'].map(c =>
+                `<option value="${c}" ${attrs.category === c ? 'selected' : ''}>${c.replace('_',' ')}</option>`
+              ).join('')}
+            </select>
+
+            <label class="form-label">Photo URL</label>
+            <input type="url" class="form-input" id="ae-photo" value="${attrs.photo_url || ''}" placeholder="https://...">
+
+            <label class="form-label">Breed</label>
+            <input type="text" class="form-input" id="ae-breed" value="${attrs.breed || ''}">
+
+            <label class="form-label">Color</label>
+            <input type="text" class="form-input" id="ae-color" value="${attrs.color || ''}">
+
+            <label class="form-label">Sex</label>
+            <select class="form-input" id="ae-sex">
+              <option value="" ${!attrs.sex ? 'selected' : ''}>—</option>
+              <option value="male" ${attrs.sex === 'male' ? 'selected' : ''}>Male</option>
+              <option value="female" ${attrs.sex === 'female' ? 'selected' : ''}>Female</option>
+            </select>
+
+            <label class="form-label">Date of Birth</label>
+            <input type="date" class="form-input" id="ae-dob" value="${attrs.date_of_birth || ''}">
+
+            <label class="form-label">Weight (lbs)</label>
+            <input type="number" class="form-input" id="ae-weight" value="${attrs.weight_lbs || ''}">
+
+            <label class="form-label">Diet / Feed Notes</label>
+            <input type="text" class="form-input" id="ae-diet" value="${attrs.diet || ''}">
+
+            <label class="form-label">Health Notes</label>
+            <textarea class="form-input form-textarea" id="ae-health">${attrs.health_notes || ''}</textarea>
+
+            <div class="form-checks">
+              <label><input type="checkbox" id="ae-vacc" ${attrs.vaccinations_current ? 'checked' : ''}> Vaccinations current</label>
+              <label><input type="checkbox" id="ae-fixed" ${attrs.spayed_neutered ? 'checked' : ''}> Spayed / Neutered</label>
+              <label><input type="checkbox" id="ae-chip" ${attrs.microchipped ? 'checked' : ''}> Microchipped</label>
+            </div>
+
+            <label class="form-label">Vet Name</label>
+            <input type="text" class="form-input" id="ae-vet" value="${attrs.vet_name || ''}">
+
+            <label class="form-label">Vet Phone</label>
+            <input type="text" class="form-input" id="ae-vetphone" value="${attrs.vet_phone || ''}">
+          </div>
         </div>
         <div class="overlay-footer">
-          ${!isNew ? '<button class="btn btn-delete" id="ae-delete">🗑 Delete</button>' : '<span></span>'}
-          <div class="action-buttons">
-            <button class="btn btn-cancel" id="ae-cancel">Cancel</button>
-            <button class="btn btn-save" id="ae-save">${isNew ? 'Add' : 'Save'}</button>
+          <!-- Detail mode footer -->
+          <div class="footer-detail" ${isNew ? 'style="display:none"' : ''}>
+            <button class="btn btn-edit" id="ae-edit">✏️ Edit</button>
+            <button class="btn btn-cancel" id="ae-close-detail">Close</button>
+          </div>
+          <!-- Edit mode footer -->
+          <div class="footer-edit" ${isNew ? '' : 'style="display:none"'}>
+            ${!isNew ? '<button class="btn btn-delete" id="ae-delete">🗑 Delete</button>' : '<span></span>'}
+            <div class="action-buttons">
+              <button class="btn btn-cancel" id="ae-cancel">${isNew ? 'Cancel' : 'Cancel'}</button>
+              <button class="btn btn-save" id="ae-save">${isNew ? 'Add' : 'Save'}</button>
+            </div>
           </div>
         </div>
       </div>
     `;
     this.shadowRoot.appendChild(overlay);
 
-    overlay.querySelector('.overlay-close').addEventListener('click', () => overlay.remove());
-    overlay.querySelector('#ae-cancel').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    const detailView = overlay.querySelector('.detail-view');
+    const editView = overlay.querySelector('.edit-view');
+    const footerDetail = overlay.querySelector('.footer-detail');
+    const footerEdit = overlay.querySelector('.footer-edit');
+
+    const closeOverlay = () => overlay.remove();
+    overlay.querySelector('.overlay-close').addEventListener('click', closeOverlay);
+    overlay.querySelector('#ae-close-detail')?.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+
+    // Edit button switches to edit mode
+    overlay.querySelector('#ae-edit')?.addEventListener('click', () => {
+      detailView.style.display = 'none';
+      editView.style.display = '';
+      footerDetail.style.display = 'none';
+      footerEdit.style.display = '';
+    });
+
+    // Cancel in edit mode goes back to detail (or closes if new)
+    overlay.querySelector('#ae-cancel').addEventListener('click', () => {
+      if (isNew) { closeOverlay(); return; }
+      editView.style.display = 'none';
+      detailView.style.display = '';
+      footerEdit.style.display = 'none';
+      footerDetail.style.display = '';
+    });
 
     overlay.querySelector('#ae-save').addEventListener('click', async () => {
       const payload = {
@@ -262,7 +332,7 @@ class DoubleECard extends HTMLElement {
           : `${this._config.daystrom_url}/api/assets/${animal.id}`;
         const method = isNew ? 'POST' : 'PATCH';
         await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        overlay.remove();
+        closeOverlay();
         await this._loadAnimals();
       } catch (err) {
         overlay.querySelector('#ae-save').textContent = 'Error!';
@@ -274,7 +344,7 @@ class DoubleECard extends HTMLElement {
         if (!confirm(`Delete ${animal.name}?`)) return;
         try {
           await fetch(`${this._config.daystrom_url}/api/assets/${animal.id}`, { method: 'DELETE' });
-          overlay.remove();
+          closeOverlay();
           await this._loadAnimals();
         } catch (err) {}
       });
@@ -937,6 +1007,65 @@ class DoubleECard extends HTMLElement {
         gap: 8px;
         cursor: pointer;
       }
+      /* Detail View */
+      .detail-view {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .detail-photo-wrap {
+        margin-bottom: 16px;
+      }
+      .detail-photo {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #2a2a3e;
+      }
+      .detail-photo-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #2a2a3e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+      }
+      .detail-fields {
+        width: 100%;
+      }
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #2a2a3e;
+      }
+      .detail-row:last-child {
+        border-bottom: none;
+      }
+      .detail-label {
+        font-size: 12px;
+        color: #888;
+        font-weight: 600;
+      }
+      .detail-value {
+        font-size: 12px;
+        color: #e0e0e0;
+        text-align: right;
+      }
+      .footer-detail, .footer-edit {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      .btn-edit {
+        background: #2980b9;
+      }
+      .btn-edit:hover { background: #3498db; }
+
       .btn-add-animal {
         background: #2a2a3e;
         color: #aaa;
