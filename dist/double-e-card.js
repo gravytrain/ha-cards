@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.5.0';
+const CARD_VERSION = '0.5.1';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -1011,22 +1011,23 @@ class DoubleECard extends HTMLElement {
       .detail-view {
         display: flex;
         flex-direction: column;
-        align-items: center;
       }
       .detail-photo-wrap {
         margin-bottom: 16px;
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #2a2a3e;
       }
       .detail-photo {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
+        width: 100%;
+        max-height: 280px;
         object-fit: cover;
-        border: 3px solid #2a2a3e;
+        display: block;
       }
       .detail-photo-placeholder {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
+        width: 100%;
+        height: 160px;
         background: #2a2a3e;
         display: flex;
         align-items: center;
