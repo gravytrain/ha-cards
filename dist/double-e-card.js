@@ -4,7 +4,7 @@
  * Inspired by advanced irrigation dashboard designs.
  */
 
-const CARD_VERSION = '0.5.1';
+const CARD_VERSION = '0.5.2';
 
 class DoubleECard extends HTMLElement {
   constructor() {
@@ -540,18 +540,18 @@ class DoubleECard extends HTMLElement {
   _renderBedGauge(bed) {
     const thirsty = this._stateValue(bed.entity) === 'on';
     const pct = thirsty ? 35 : 85;
-    const color = thirsty ? '#e74c3c' : '#1D9E75';
+    const color = thirsty ? 'var(--needle)' : 'var(--ledger)';
     const circumference = 2 * Math.PI * 36;
     const offset = circumference - (pct / 100) * circumference;
 
     return `
       <div class="zone-card">
         <svg class="gauge" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="36" fill="none" stroke="#2a2a3e" stroke-width="6"/>
+          <circle cx="40" cy="40" r="36" fill="none" stroke="var(--bezel)" stroke-width="6"/>
           <circle cx="40" cy="40" r="36" fill="none" stroke="${color}" stroke-width="6"
             stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
             stroke-linecap="round" transform="rotate(-90 40 40)"/>
-          <text x="40" y="44" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">${pct}%</text>
+          <text x="40" y="44" text-anchor="middle" fill="var(--ink)" font-size="14" font-weight="600">${pct}%</text>
         </svg>
         <div class="zone-label">Bed ${bed.id}</div>
         <div class="zone-sub">${bed.name}</div>
@@ -579,14 +579,31 @@ class DoubleECard extends HTMLElement {
   _styles() {
     return `
       :host {
+        --housing: #14161b;
+        --panel: #1c2027;
+        --panel-2: #23282f;
+        --well: #171a20;
+        --bezel: #2c323b;
+        --hairline: #333a44;
+        --brass: #d9a441;
+        --brass-dim: #a67f34;
+        --needle: #c8483a;
+        --ledger: #9fbf8f;
+        --ink: #e7e3d8;
+        --ink-dim: #9aa0ab;
+        --ink-faint: #6b7280;
+        --font-display: 'Oswald', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         display: block;
       }
       .card {
-        background: #1a1a2e;
-        border-radius: 16px;
-        padding: 24px;
-        color: #e0e0e0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--panel);
+        border: 1px solid var(--bezel);
+        border-radius: 8px;
+        padding: 20px;
+        color: var(--ink);
+        font-family: var(--font-body);
       }
 
       /* Header */
@@ -606,18 +623,19 @@ class DoubleECard extends HTMLElement {
       }
       .header h1 {
         margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: #fff;
+        font: 600 24px/1 var(--font-display);
+        letter-spacing: .035em;
+        text-transform: uppercase;
+        color: var(--ink);
       }
       .header-sub {
         font-size: 12px;
-        color: #888;
+        color: var(--ink-dim);
       }
       .version {
         font-size: 11px;
-        color: #555;
-        background: #2a2a3e;
+        color: var(--ink-faint);
+        background: var(--bezel);
         padding: 3px 8px;
         border-radius: 4px;
       }
@@ -628,16 +646,17 @@ class DoubleECard extends HTMLElement {
         align-items: center;
         gap: 16px;
         padding: 16px 20px;
-        border-radius: 12px;
-        margin-bottom: 24px;
+        border: 1px solid var(--bezel);
+        border-radius: 5px;
+        margin-bottom: 20px;
       }
       .status-good {
-        background: linear-gradient(135deg, #1D9E75 0%, #16a085 100%);
-        color: #fff;
+        background: linear-gradient(135deg, var(--ledger) 0%, #6e967a 100%);
+        color: var(--ink);
       }
       .status-rain {
-        background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
-        color: #fff;
+        background: linear-gradient(135deg, var(--brass) 0%, var(--brass-dim) 100%);
+        color: var(--ink);
       }
       .status-icon {
         font-size: 24px;
@@ -679,8 +698,9 @@ class DoubleECard extends HTMLElement {
       .section {
         margin-bottom: 24px;
         padding: 16px;
-        background: #16213e;
-        border-radius: 12px;
+        background: var(--well);
+        border: 1px solid var(--bezel);
+        border-radius: 5px;
       }
       .section-header {
         display: flex;
@@ -690,9 +710,10 @@ class DoubleECard extends HTMLElement {
       }
       .section-header h2 {
         margin: 0;
-        font-size: 15px;
-        font-weight: 600;
-        color: #fff;
+        font: 500 18px/1 var(--font-display);
+        letter-spacing: .035em;
+        text-transform: uppercase;
+        color: var(--ink);
       }
 
       /* Badges */
@@ -704,17 +725,17 @@ class DoubleECard extends HTMLElement {
         border-radius: 4px;
       }
       .badge-on {
-        background: #1D9E75;
-        color: #fff;
+        background: var(--ledger);
+        color: var(--ink);
       }
       .badge-off {
-        background: #555;
-        color: #aaa;
+        background: var(--ink-faint);
+        color: var(--ink-dim);
       }
       .badge-pending {
-        background: #2a2a3e;
-        color: #888;
-        border: 1px dashed #555;
+        background: var(--bezel);
+        color: var(--ink-dim);
+        border: 1px dashed var(--ink-faint);
       }
 
       /* Action Buttons */
@@ -726,33 +747,34 @@ class DoubleECard extends HTMLElement {
         font-size: 12px;
         font-weight: 600;
         padding: 6px 12px;
-        border-radius: 6px;
+        border: 1px solid var(--bezel);
+        border-radius: 4px;
         border: none;
         cursor: pointer;
         transition: all 0.2s;
-        color: #fff;
+        color: var(--ink);
       }
       .btn:disabled {
         opacity: 0.6;
         cursor: wait;
       }
       .btn-water {
-        background: #2980b9;
+        background: #5b9bd5;
       }
       .btn-water:hover:not(:disabled) {
-        background: #3498db;
+        background: #78afe2;
       }
       .btn-fert {
-        background: #27ae60;
+        background: var(--ledger);
       }
       .btn-fert:hover:not(:disabled) {
-        background: #2ecc71;
+        background: #b3d5a3;
       }
       .btn-success {
-        background: #1D9E75 !important;
+        background: var(--ledger) !important;
       }
       .btn-error {
-        background: #e74c3c !important;
+        background: var(--needle) !important;
       }
 
       /* Animals */
@@ -765,7 +787,7 @@ class DoubleECard extends HTMLElement {
       .animal-group-label {
         font-size: 12px;
         font-weight: 600;
-        color: #888;
+        color: var(--ink-dim);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 8px;
@@ -779,8 +801,9 @@ class DoubleECard extends HTMLElement {
         display: flex;
         align-items: center;
         gap: 10px;
-        background: #1a1a2e;
-        border-radius: 10px;
+        background: var(--panel);
+        border: 1px solid var(--bezel);
+        border-radius: 5px;
         padding: 12px 14px;
         min-width: 180px;
         flex: 1;
@@ -788,14 +811,14 @@ class DoubleECard extends HTMLElement {
         transition: background 0.2s;
       }
       .animal-card:hover {
-        background: #222240;
+        background: var(--panel-2);
       }
       .animal-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid #2a2a3e;
+        border: 1px solid var(--brass-dim);
         flex-shrink: 0;
       }
       .animal-icon {
@@ -814,11 +837,11 @@ class DoubleECard extends HTMLElement {
       .animal-name {
         font-size: 14px;
         font-weight: 600;
-        color: #fff;
+        color: var(--ink);
       }
       .animal-details {
         font-size: 11px;
-        color: #888;
+        color: var(--ink-dim);
         margin-top: 2px;
       }
       .animal-badges {
@@ -835,12 +858,12 @@ class DoubleECard extends HTMLElement {
       }
       .badge-good {
         background: rgba(29, 158, 117, 0.2);
-        color: #1D9E75;
+        color: var(--ledger);
       }
       .animal-weight {
         font-size: 12px;
         font-weight: 600;
-        color: #aaa;
+        color: var(--ink-dim);
         white-space: nowrap;
       }
 
@@ -854,13 +877,14 @@ class DoubleECard extends HTMLElement {
         display: flex;
         flex-direction: column;
         align-items: center;
-        background: #1a1a2e;
-        border-radius: 12px;
+        background: var(--panel);
+        border: 1px solid var(--bezel);
+        border-radius: 5px;
         padding: 16px 8px 12px;
         transition: background 0.2s;
       }
       .zone-card:hover {
-        background: #222240;
+        background: var(--panel-2);
       }
       .gauge {
         width: 80px;
@@ -870,11 +894,11 @@ class DoubleECard extends HTMLElement {
       .zone-label {
         font-size: 13px;
         font-weight: 600;
-        color: #fff;
+        color: var(--ink);
       }
       .zone-sub {
         font-size: 11px;
-        color: #888;
+        color: var(--ink-dim);
         margin-top: 2px;
       }
       .zone-status {
@@ -901,13 +925,13 @@ class DoubleECard extends HTMLElement {
         height: 10px;
         border-radius: 50%;
       }
-      .ind-on { background: #1D9E75; }
-      .ind-off { background: #555; }
-      .ind-warn { background: #d4a017; }
+      .ind-on { background: var(--ledger); }
+      .ind-off { background: var(--ink-faint); }
+      .ind-warn { background: var(--brass); }
       .irr-note {
         width: 100%;
         font-size: 12px;
-        color: #666;
+        color: var(--ink-faint);
         font-style: italic;
         margin-top: 8px;
       }
@@ -923,35 +947,35 @@ class DoubleECard extends HTMLElement {
         z-index: 9999;
       }
       .overlay-panel {
-        background: #1a1a2e;
-        border-radius: 16px;
+        background: var(--panel);
+        border-radius: 7px;
         width: 90%;
         max-width: 420px;
         max-height: 85vh;
         display: flex;
         flex-direction: column;
-        border: 1px solid #2a2a3e;
+        border: 1px solid var(--bezel);
       }
       .overlay-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 16px 20px;
-        border-bottom: 1px solid #2a2a3e;
+        border-bottom: 1px solid var(--bezel);
       }
       .overlay-header h3 {
         margin: 0;
         font-size: 16px;
-        color: #fff;
+        color: var(--ink);
       }
       .overlay-close {
         background: none;
         border: none;
-        color: #888;
+        color: var(--ink-dim);
         font-size: 18px;
         cursor: pointer;
       }
-      .overlay-close:hover { color: #fff; }
+      .overlay-close:hover { color: var(--ink); }
       .overlay-body {
         padding: 16px 20px;
         overflow-y: auto;
@@ -962,13 +986,13 @@ class DoubleECard extends HTMLElement {
         justify-content: space-between;
         align-items: center;
         padding: 12px 20px;
-        border-top: 1px solid #2a2a3e;
+        border-top: 1px solid var(--bezel);
       }
       .form-label {
         display: block;
         font-size: 11px;
         font-weight: 600;
-        color: #888;
+        color: var(--ink-dim);
         margin: 12px 0 4px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -978,16 +1002,16 @@ class DoubleECard extends HTMLElement {
         display: block;
         width: 100%;
         padding: 8px 10px;
-        background: #16213e;
-        border: 1px solid #2a2a3e;
+        background: var(--well);
+        border: 1px solid var(--bezel);
         border-radius: 6px;
-        color: #e0e0e0;
+        color: var(--ink);
         font-size: 13px;
         box-sizing: border-box;
       }
       .form-input:focus {
         outline: none;
-        border-color: #1D9E75;
+        border-color: var(--ledger);
       }
       .form-textarea {
         min-height: 60px;
@@ -1001,7 +1025,7 @@ class DoubleECard extends HTMLElement {
       }
       .form-checks label {
         font-size: 13px;
-        color: #ccc;
+        color: var(--ink-dim);
         display: flex;
         align-items: center;
         gap: 8px;
@@ -1017,7 +1041,7 @@ class DoubleECard extends HTMLElement {
         width: 100%;
         border-radius: 12px;
         overflow: hidden;
-        background: #2a2a3e;
+        background: var(--bezel);
       }
       .detail-photo {
         width: 100%;
@@ -1028,7 +1052,7 @@ class DoubleECard extends HTMLElement {
       .detail-photo-placeholder {
         width: 100%;
         height: 160px;
-        background: #2a2a3e;
+        background: var(--bezel);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1041,19 +1065,19 @@ class DoubleECard extends HTMLElement {
         display: flex;
         justify-content: space-between;
         padding: 8px 0;
-        border-bottom: 1px solid #2a2a3e;
+        border-bottom: 1px solid var(--bezel);
       }
       .detail-row:last-child {
         border-bottom: none;
       }
       .detail-label {
         font-size: 12px;
-        color: #888;
+        color: var(--ink-dim);
         font-weight: 600;
       }
       .detail-value {
         font-size: 12px;
-        color: #e0e0e0;
+        color: var(--ink);
         text-align: right;
       }
       .footer-detail, .footer-edit {
@@ -1063,28 +1087,28 @@ class DoubleECard extends HTMLElement {
         width: 100%;
       }
       .btn-edit {
-        background: #2980b9;
+        background: #5b9bd5;
       }
-      .btn-edit:hover { background: #3498db; }
+      .btn-edit:hover { background: #78afe2; }
 
       .btn-add-animal {
-        background: #2a2a3e;
-        color: #aaa;
+        background: var(--bezel);
+        color: var(--ink-dim);
         font-size: 11px;
       }
-      .btn-add-animal:hover { background: #333; color: #fff; }
+      .btn-add-animal:hover { background: #333; color: var(--ink); }
       .btn-save {
-        background: #1D9E75;
+        background: var(--ledger);
       }
       .btn-save:hover { background: #24b888; }
       .btn-cancel {
-        background: #555;
+        background: var(--ink-faint);
       }
-      .btn-cancel:hover { background: #666; }
+      .btn-cancel:hover { background: var(--ink-faint); }
       .btn-delete {
-        background: #e74c3c;
+        background: var(--needle);
       }
-      .btn-delete:hover { background: #c0392b; }
+      .btn-delete:hover { background: #9f382f; }
 
       /* Placeholder */
       .placeholder {
@@ -1094,11 +1118,11 @@ class DoubleECard extends HTMLElement {
       .placeholder p {
         margin: 4px 0;
         font-size: 13px;
-        color: #aaa;
+        color: var(--ink-dim);
       }
       .placeholder-sub {
         font-size: 11px !important;
-        color: #666 !important;
+        color: var(--ink-faint) !important;
         font-style: italic;
       }
     `;
@@ -1133,4 +1157,4 @@ window.customCards.push({
   preview: true,
 });
 
-console.info(`%c DOUBLE-E-CARD %c v${CARD_VERSION} `, 'background:#1D9E75;color:#fff;font-weight:700;', 'background:#1a1a2e;color:#1D9E75;');
+console.info(`%c DOUBLE-E-CARD %c v${CARD_VERSION} `, 'background:var(--ledger);color:var(--ink);font-weight:700;', 'background:var(--panel);color:var(--ledger);');
